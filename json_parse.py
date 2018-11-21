@@ -9,7 +9,7 @@ filename = sys.argv[1]
 #filename = "gaia-3m-NaN.json"
 #filename_temp = "gaia-3m-NaN-temp.json"
 #filename_out = "gaia-3m-out.json"
-filename_out = sys.argv[3]
+filename_out = sys.argv[2]
 outputfile_gaia = filename_out
 
 print("starting script")
@@ -78,6 +78,7 @@ def parse():
     print("starting to_json")
     output = stops.to_json(outputfile_gaia, orient='records')
     print("done with json output, yay!")
+    exit();
 #    print(output)
     
 #
@@ -89,4 +90,4 @@ def parse():
 #if (val == 1): parse();
 #if (val == 2): combine();
 #if (val == 3): output();
-#parse();
+parse();
