@@ -36,7 +36,6 @@ lengte_breedte = pd.DataFrame({'l': gaia_l,
 merge = pd.DataFrame({'ra': gaia_ra,
                       'dec': gaia_dec})
 
-
 # Hoek omrekenen
 pi = 3.14159
 tan = (gaia_par / 1000 / 60 / 60 / 180)
@@ -82,6 +81,7 @@ cartesian = X * polar_z + Y * polar_z + Z * polar_z
 center = 0.0
 cart = cartesian + center
 
+cart = cart.dropna()
 print(cart)
 
 carts = cart.to_json(orient="index")
@@ -92,21 +92,16 @@ with open('Cartesian.json', 'w') as outfile:
 Vx = gaiadatasets.pmra
 Vy = gaiadatasets.pmdec
 Vz = gaiadatasets.radial_velocity
-print(Vz)
-
 
 vector_x = np.cos(Vx) * np.sin(Vy)
 vector_y = np.cos(Vy)
 vector_z = np.sin(Vx) * np.sin(Vy)
 
-V = vector_x * Vz + vector_y * Vz + vector_z * Vz
+v = vector_x * Vz + vector_y * Vz + vector_z * Vz
 
-vect_x = vector_x * Vz
-vect_y = vector_y * Vz
-vect_z = vector_z * Vz
-
-
-
+#Vector NaN eruit gehaald
+V = v.dropna()
+print(V)
 
 # Astrometric psuedo colour
 #νeff [µm−1] = 2.0 −1.8π/arctan + (0.331 + 0.572C − 0.014C^2 + 0.045C^3)
