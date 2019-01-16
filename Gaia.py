@@ -13,7 +13,7 @@ import json as js
 from collections import Counter
 
 # Deze variabel importeert de CSV bestand van Gaia
-gaiadatasets = pd.read_csv("data.csv")
+gaiadatasets = pd.read_csv("data/data.csv")
 
 # print(gaiadatasets)
 
@@ -65,7 +65,7 @@ print(absolute)
 Abs_magnitude = absolute.to_json(orient="index")
 print(Abs_magnitude)
 
-with open('abs_magintude.json', 'w') as outfile:
+with open('data/abs_magintude.json', 'w') as outfile:
  js.dumps(Abs_magnitude)
 
 # X Y Z
@@ -85,7 +85,7 @@ cart = cart.dropna()
 print(cart)
 
 carts = cart.to_json(orient="index")
-with open('Cartesian.json', 'w') as outfile:
+with open('data/Cartesian.json', 'w') as outfile:
  js.dumps(carts)
 # Vx Vy Vz
 
