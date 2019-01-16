@@ -26,6 +26,10 @@ gaia_phot_g_mean_mag = gaiadatasets.phot_g_mean_mag
 gaia_colour = gaiadatasets.astrometric_pseudo_colour
 
 
+designation = gaiadatasets.designation
+
+
+
 # print(lengte_breedte)
 merge = pd.DataFrame({'ra': gaia_ra,
                       'dec': gaia_dec})
@@ -59,8 +63,13 @@ absolute = Absolute_Magnitude.dropna()
 print("Absolute Magnitude zonder legen values: ")
 print(absolute)
 
+abs_data = pd.DataFrame({'designation': designation, 'sterBright': absolute})
+
+absolute_data = abs_data.dropna()
+print(absolute_data)
+
 outputfile_absmagnitude = "data/abs_magnitude.json"
-Abs_magnitude = absolute.to_json(outputfile_absmagnitude, orient="records")
+Abs_magnitude = absolute_data.to_json(outputfile_absmagnitude, orient="records")
 #print(Abs_magnitude)
 
 # X Y Z
@@ -82,6 +91,39 @@ print(cart)
 outputfile_carts = "data/Cartesian.json"
 carts = cart.to_json(outputfile_carts, orient="records")
 
+ra = gaia_ra
+dec = gaia_dec
+distance = d
+pmra = gaiadatasets.pmra
+pmdec = gaiadatasets.pmdec
+Gaia_radial_velocity = gaiadatasets.radial_velocity
+radial_velocity = Gaia_radial_velocity.dropna()
+star_position = (ra, dec, distance)
+a = star_position
+
+
+ster_posx = np.cos(ra) * np.sin(dec)
+ster_posy = np.cos(dec)
+ster_posz = np.sin(ra) * np.sin(dec)
+
+ster_positie = ster_posx * distance + ster_posy * distance + ster_posz * distance
+
+a = ster_positie
+
+velocity_x = np.cos(pmra + ra) + np.sin(pmdec + dec)
+velocity_y = np.cos(pmdec + dec)
+velocity_z = np.sin(pmra + ra) * np.sin(pmdec + dec)
+velocity = (velocity_x * (distance + radial_velocity ) + velocity_y * (distance + radial_velocity) + velocity_z * (distance + radial_velocity ))
+
+b = ster_positie + velocity
+
+Velocity = (b - a)
+
+# velocity_column = ['Velocity' velocity]
+
+velocity = Velocity.dropna()
+print(velocity)
+
 # Vx Vy Vz
 Vx = gaiadatasets.pmra
 Vy = gaiadatasets.pmdec
@@ -101,8 +143,6 @@ print(V)
 #νeff [µm−1] = 2.0 −1.8π/arctan + (0.331 + 0.572C − 0.014C^2 + 0.045C^3)
 # C in nanometer omrekenen
 
-C = ~340 - 910
-
-veff = gaia_colour - 1.8/pi * np.arctan(0.331 + 0.572 + C - 0.014 + C ** 2 + 0.045 + C ** 3)
+veff = gaia_colour - 1.8/pi * np.arctan(0.331 + 0.572 - 0.014 ** 2 + 0.045 ** 3)
 
 print(veff)
