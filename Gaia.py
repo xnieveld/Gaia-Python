@@ -4,7 +4,7 @@ Created on Wed Oct  3 10:19:42 2018
 
 @author: Mourad Nasser
 """
-import cartesian as cartesian
+#import cartesian as cartesian
 import pandas as pd
 import matplotlib.pyplot as plt
 import math as m
@@ -21,16 +21,10 @@ gaiadatasets = pd.read_csv("data/data.csv")
 # Hier worden de columns van de datasets uitgeplukt
 gaia_ra = gaiadatasets.ra
 gaia_dec = gaiadatasets.dec
-gaia_l = gaiadatasets.l
-gaia_b = gaiadatasets.b
 gaia_par = gaiadatasets.parallax
-Apparant_Magnitude = gaiadatasets.phot_g_mean_mag
+gaia_phot_g_mean_mag = gaiadatasets.phot_g_mean_mag
 gaia_colour = gaiadatasets.astrometric_pseudo_colour
 
-#print(gaia_colour)
-# De uitgeplukte columns worden gemerged
-lengte_breedte = pd.DataFrame({'l': gaia_l,
-                               'b': gaia_b})
 
 # print(lengte_breedte)
 merge = pd.DataFrame({'ra': gaia_ra,
@@ -51,8 +45,11 @@ d = (2 * 1.511 * 10 ** 11) / np.tan(tan * m.pi)
 
 # Absolute Magnitude
 
-Absolute_Magnitude = Apparant_Magnitude - 5 * np.log10((d / (3.08567758149137 * 10 ** 16) / 10))
+Absolute_Magnitude = gaia_phot_g_mean_mag - 5 * np.log10((d / (3.08567758149137 * 10 ** 16) / 10))
 # Hier wordt bekeken hoeveel rijen geen data hebben.
+
+absmag_columns = ['designation', 'abs_mag_conv']
+#stops = pd.DataFrame(data, columns=absmag_columns)
 Abs_emptyValue = pd.DataFrame(Absolute_Magnitude)
 print("Aantal lege: ")
 print(Abs_emptyValue.isnull().sum().sum())
@@ -62,11 +59,9 @@ absolute = Absolute_Magnitude.dropna()
 print("Absolute Magnitude zonder legen values: ")
 print(absolute)
 
-Abs_magnitude = absolute.to_json(orient="index")
-print(Abs_magnitude)
-
-with open('data/abs_magintude.json', 'w') as outfile:
- js.dumps(Abs_magnitude)
+outputfile_absmagnitude = "data/abs_magnitude.json"
+Abs_magnitude = absolute.to_json(outputfile_absmagnitude, orient="records")
+#print(Abs_magnitude)
 
 # X Y Z
 polar_x = gaia_ra
@@ -84,11 +79,10 @@ cart = cartesian + center
 cart = cart.dropna()
 print(cart)
 
-carts = cart.to_json(orient="index")
-with open('data/Cartesian.json', 'w') as outfile:
- js.dumps(carts)
-# Vx Vy Vz
+outputfile_carts = "data/Cartesian.json"
+carts = cart.to_json(outputfile_carts, orient="records")
 
+# Vx Vy Vz
 Vx = gaiadatasets.pmra
 Vy = gaiadatasets.pmdec
 Vz = gaiadatasets.radial_velocity
