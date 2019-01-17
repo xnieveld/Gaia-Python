@@ -4,4 +4,5 @@ install:
 language: python
 python: 
   - "3.6"
-script: "-pytest"
+script: 
+  - pytest
