@@ -1,8 +1,9 @@
 --- 
 install: 
   - "pip install -r requirements.txt"
+  - "pip install pylint"
 language: python
 python: 
   - "3.6"
 script: 
-  - pytest
+  - "pylint *.py --errors-only"
