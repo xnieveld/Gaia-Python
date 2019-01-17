@@ -38,7 +38,6 @@ merge = pd.DataFrame({'ra': gaia_ra,
 pi = 3.14159
 tan = (gaia_par / 1000 / 60 / 60 / 180)
 d = (2 * 1.511 * 10 ** 11) / np.tan(tan * m.pi)
-
 #print(gaia_par)
 #print(d)
 
@@ -48,23 +47,18 @@ d = (2 * 1.511 * 10 ** 11) / np.tan(tan * m.pi)
 
 
 # Absolute Magnitude
-
 Absolute_Magnitude = gaia_phot_g_mean_mag - 5 * np.log10((d / (3.08567758149137 * 10 ** 16) / 10))
 # Hier wordt bekeken hoeveel rijen geen data hebben.
-
 absmag_columns = ['designation', 'abs_mag_conv']
 #stops = pd.DataFrame(data, columns=absmag_columns)
-Abs_emptyValue = pd.DataFrame(Absolute_Magnitude)
-print("Aantal lege: ")
+Abs_emptyValue = pd.DataFrame({'aantal_lege_magnitudes': Absolute_Magnitude})
 print(Abs_emptyValue.isnull().sum().sum())
 
 # NaN wordt uit de lijst gehaald.
 absolute = Absolute_Magnitude.dropna()
-print("Absolute Magnitude zonder legen values: ")
-print(absolute)
-
 abs_data = pd.DataFrame({'designation': designation, 'sterBright': absolute})
-
+# De helderheid van de sterren worden geformatteerd in een decimaal
+abs_data = abs_data.round({'designation': 0, 'sterBright': 1})
 absolute_data = abs_data.dropna()
 print(absolute_data)
 
@@ -81,68 +75,77 @@ X = np.cos(polar_x) * np.sin(polar_y)
 Y = np.cos(polar_y)
 Z = np.sin(polar_x) * np.sin(polar_y)
 
-cartesian = X * polar_z + Y * polar_z + Z * polar_z
+cartesian = (X * polar_z + Y * polar_z + Z * polar_z)
 center = 0.0
 cart = cartesian + center
 
 cart = cart.dropna()
-print(cart)
+
+cartesian = pd.DataFrame({'cartesian': cart})
+cartesian = cartesian.round(1)
+print(cartesian)
 
 outputfile_carts = "data/Cartesian.json"
-carts = cart.to_json(outputfile_carts, orient="records")
+carts = cartesian.to_json(outputfile_carts, orient="records")
 
 ra = gaia_ra
+ra = gaia_ra.round(1)
 dec = gaia_dec
+dec = gaia_dec.round(1)
 distance = d
+distance = distance.round(1)
+print(distance)
 pmra = gaiadatasets.pmra
 pmdec = gaiadatasets.pmdec
 Gaia_radial_velocity = gaiadatasets.radial_velocity
 radial_velocity = Gaia_radial_velocity.dropna()
 star_position = (ra, dec, distance)
-a = star_position
 
 
-ster_posx = np.cos(ra) * np.sin(dec)
-ster_posy = np.cos(dec)
-ster_posz = np.sin(ra) * np.sin(dec)
 
-ster_positie = ster_posx * distance + ster_posy * distance + ster_posz * distance
+ster_positx = np.cos(ra) * np.sin(dec)
+ster_posity = np.cos(dec)
+ster_positz = np.sin(ra) * np.sin(dec)
+
+
+ster_positx = ster_positx.round(2)
+print(ster_positx)
+
+ster_posity = ster_posity.round(2)
+print(ster_posity)
+
+
+ster_positz = ster_positz.round(2)
+print(ster_positz)
+
+
+sterpositie = pd.DataFrame({'designation' : designation,'sterX' : ster_positx, 'sterY' : ster_posity, 'sterZ' : ster_positz})
+
+print(sterpositie)
+
+outputfile_ster = "data/sterXYZ.json"
+sterpositie = sterpositie.to_json(outputfile_ster, orient="records")
+
+
+ster_positie = (ster_positx * distance + ster_posity * distance + ster_positz * distance)
 
 a = ster_positie
+a = ster_positie.round(1)
+print(a)
 
 velocity_x = np.cos(pmra + ra) + np.sin(pmdec + dec)
 velocity_y = np.cos(pmdec + dec)
 velocity_z = np.sin(pmra + ra) * np.sin(pmdec + dec)
-velocity = (velocity_x * (distance + radial_velocity ) + velocity_y * (distance + radial_velocity) + velocity_z * (distance + radial_velocity ))
+velocity = (velocity_x * (distance + radial_velocity) + velocity_y * (distance + radial_velocity) + velocity_z * (distance + radial_velocity))
 
 b = ster_positie + velocity
 
-Velocity = (b - a)
+velocity = (b - a)
 
 # velocity_column = ['Velocity' velocity]
-
-velocity = Velocity.dropna()
+velocity = velocity.dropna()
+velocity = pd.DataFrame({'velocity': velocity})
+velocity = velocity.astype('double')
 print(velocity)
 
-# Vx Vy Vz
-Vx = gaiadatasets.pmra
-Vy = gaiadatasets.pmdec
-Vz = gaiadatasets.radial_velocity
-
-vector_x = np.cos(Vx) * np.sin(Vy)
-vector_y = np.cos(Vy)
-vector_z = np.sin(Vx) * np.sin(Vy)
-
-v = vector_x * Vz + vector_y * Vz + vector_z * Vz
-
-#Vector NaN eruit gehaald
-V = v.dropna()
-print(V)
-
-# Astrometric psuedo colour
-#νeff [µm−1] = 2.0 −1.8π/arctan + (0.331 + 0.572C − 0.014C^2 + 0.045C^3)
-# C in nanometer omrekenen
-
-veff = gaia_colour - 1.8/pi * np.arctan(0.331 + 0.572 - 0.014 ** 2 + 0.045 ** 3)
-
-print(veff)
+# G = whitelight, GBp = blue, and GRp = red
