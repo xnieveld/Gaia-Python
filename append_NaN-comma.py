@@ -1,35 +1,37 @@
 #!/usr/bin/python3
+''' Script to replace empty values in Gaia JSON dataset with null '''
 import os
 import sys
 import fileinput
 
-filename = sys.argv[1]
-filepathname = filename.split(".json")[0]
-filename_simple = os.path.basename(filename).split(".json")[0]
-text_to_search = ',,'
-replacement_text = ',null,'
+FILENAME = sys.argv[1]
+FILEPATHNAME = FILENAME.split(".json")[0]
+FILENAME_SIMPLE = os.path.basename(FILENAME).split(".json")[0]
+TEXT_TO_SEARCH = ',,'
+REPLACEMENT_TEXT = ',null,'
 
 def replace():
-	with fileinput.FileInput(filename, inplace=True, backup='-original.json') as file:
-		for line in file:
-			print(line.replace(text_to_search, replacement_text), end='')
+    ''' Replaces empty value with null '''
+    with fileinput.FileInput(FILENAME, inplace=True, backup='-original.json') as file:
+        for line in file:
+            print(line.replace(TEXT_TO_SEARCH, REPLACEMENT_TEXT), end='')
 
-	#dirty, run again to catch more
-	with fileinput.FileInput(filename, inplace=True, backup='-first.json') as file:
-		for line in file:
-			print(line.replace(text_to_search, replacement_text), end='')
+    #dirty, run again to catch more
+    with fileinput.FileInput(FILENAME, inplace=True, backup='-first.json') as file:
+        for line in file:
+            print(line.replace(TEXT_TO_SEARCH, REPLACEMENT_TEXT), end='')
 
-	#dirty, run again to catch more
-	with fileinput.FileInput(filename, inplace=True, backup='-second.json') as file:
-		for line in file:
-			print(line.replace(',]', ',null]'), end='')
+    #dirty, run again to catch more
+    with fileinput.FileInput(FILENAME, inplace=True, backup='-second.json') as file:
+        for line in file:
+            print(line.replace(',]', ',null]'), end='')
 
-replace();
+replace()
 
-os.remove("%s.json" % filepathname)
-os.remove("%s.json-first.json" % filepathname)
-os.rename("%s.json-second.json" % filepathname, "%s-parsed.json" % filepathname)
-os.rename("%s.json-original.json" % filepathname, "%s.json" % filepathname)
+os.remove("%s.json" % FILEPATHNAME)
+os.remove("%s.json-first.json" % FILEPATHNAME)
+os.rename("%s.json-second.json" % FILEPATHNAME, "%s-parsed.json" % FILEPATHNAME)
+os.rename("%s.json-original.json" % FILEPATHNAME, "%s.json" % FILEPATHNAME)
 # gaia.json
 # gaia.json-first.json
 # gaia.json-second.json

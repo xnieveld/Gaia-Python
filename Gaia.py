@@ -1,151 +1,133 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct  3 10:19:42 2018
-
 @author: Mourad Nasser
 """
 #import cartesian as cartesian
+import math
 import pandas as pd
-import matplotlib.pyplot as plt
-import math as m
 import numpy as np
-import json as js
-from collections import Counter
 
 # Deze variabel importeert de CSV bestand van Gaia
-gaiadatasets = pd.read_csv("data/data.csv")
+GAIADATASETS = pd.read_csv("data/data.csv")
 
 # print(gaiadatasets)
 
 # print(gaiadatasets[2:])
-# Hier worden de columns van de datasets uitgeplukt
-gaia_ra = gaiadatasets.ra
-gaia_dec = gaiadatasets.dec
-gaia_par = gaiadatasets.parallax
-gaia_phot_g_mean_mag = gaiadatasets.phot_g_mean_mag
-gaia_colour = gaiadatasets.astrometric_pseudo_colour
-
-
-designation = gaiadatasets.designation
-
-
-
-# print(lengte_breedte)
-merge = pd.DataFrame({'ra': gaia_ra,
-                      'dec': gaia_dec})
+''' Hier worden de columns van de datasets uitgeplukt '''
+GAIA_RA = GAIADATASETS.ra
+GAIA_DEC = GAIADATASETS.dec
+GAIA_PAR = GAIADATASETS.parallax
+GAIA_PHOT_G_MEAN_MAG = GAIADATASETS.phot_g_mean_mag
+GAIA_COLOUR = GAIADATASETS.astrometric_pseudo_colour
+DESIGNATION = GAIADATASETS.designation
+GAIA_PMRA = GAIADATASETS.pmra
+GAIA_PMDEC = GAIADATASETS.pmdec
+GAIA_RADIAL_VELOCITY = GAIADATASETS.radial_velocity.dropna()
 
 # Hoek omrekenen
-pi = 3.14159
-tan = (gaia_par / 1000 / 60 / 60 / 180)
-d = (2 * 1.511 * 10 ** 11) / np.tan(tan * m.pi)
-#print(gaia_par)
-#print(d)
+TAN = (GAIA_PAR / 1000 / 60 / 60 / 180)
+RAW_D = (2 * 1.511 * 10 ** 11) / np.tan(TAN * math.pi)
 
-# distance modulus omrekenen
+# print(lengte_breedte)
+# merge = pd.DataFrame({'ra': GAIA_RA, 'dec': GAIA_DEC})
 
-# reminder t = 10 ** 4
+def brightness():
+    ''' Berekent helderheid ster '''
 
+    # print(gaia_par)
+    # print(RAW_D)
+    # distance modulus omrekenen
+    # reminder t = 10 ** 4
 
-# Absolute Magnitude
-Absolute_Magnitude = gaia_phot_g_mean_mag - 5 * np.log10((d / (3.08567758149137 * 10 ** 16) / 10))
-# Hier wordt bekeken hoeveel rijen geen data hebben.
-absmag_columns = ['designation', 'abs_mag_conv']
-#stops = pd.DataFrame(data, columns=absmag_columns)
-Abs_emptyValue = pd.DataFrame({'aantal_lege_magnitudes': Absolute_Magnitude})
-print(Abs_emptyValue.isnull().sum().sum())
+    # Absolute Magnitude
+    absolute_magnitude = GAIA_PHOT_G_MEAN_MAG - 5 * \
+    np.log10((RAW_D / (3.08567758149137 * 10 ** 16) / 10))
+    # Hier wordt bekeken hoeveel rijen geen data hebben.
+    # absmag_columns = ['designation', 'abs_mag_conv']
+    #stops = pd.DataFrame(data, columns=absmag_columns)
+    abs_empty_value = pd.DataFrame({'aantal_lege_magnitudes': absolute_magnitude})
+    print(abs_empty_value.isnull().sum().sum())
 
-# NaN wordt uit de lijst gehaald.
-absolute = Absolute_Magnitude.dropna()
-abs_data = pd.DataFrame({'designation': designation, 'sterBright': absolute})
-# De helderheid van de sterren worden geformatteerd in een decimaal
-abs_data = abs_data.round({'designation': 0, 'sterBright': 1})
-absolute_data = abs_data.dropna()
-print(absolute_data)
+    # NaN wordt uit de lijst gehaald.
+    absolute = absolute_magnitude.dropna()
+    abs_data = pd.DataFrame({'designation': DESIGNATION, 'sterBright': absolute})
+    # De helderheid van de sterren worden geformatteerd in een decimaal
+    absolute_data = (abs_data.round({'designation': 0, 'sterBright': 1})).dropna()
+    print(absolute_data)
 
-outputfile_absmagnitude = "data/abs_magnitude.json"
-Abs_magnitude = absolute_data.to_json(outputfile_absmagnitude, orient="records")
-#print(Abs_magnitude)
+    # en file wegschrijven naar JSON
+    absolute_data.to_json("data/abs_magnitude.json", orient="records")
 
-# X Y Z
-polar_x = gaia_ra
-polar_y = gaia_dec
-polar_z = d
+def convert_xyz():
+    ''' Converts Gaia data to XYZ values '''
+    polar_x = GAIA_RA
+    polar_y = GAIA_DEC
+    polar_z = RAW_D
 
-X = np.cos(polar_x) * np.sin(polar_y)
-Y = np.cos(polar_y)
-Z = np.sin(polar_x) * np.sin(polar_y)
+    gaia_x = np.cos(polar_x) * np.sin(polar_y)
+    gaia_y = np.cos(polar_y)
+    gaia_z = np.sin(polar_x) * np.sin(polar_y)
 
-cartesian = (X * polar_z + Y * polar_z + Z * polar_z)
-center = 0.0
-cart = cartesian + center
+    cartesian = (gaia_x * polar_z + gaia_y * polar_z + gaia_z * polar_z)
+    # center = 0.0
+    cart_nan = (cartesian + 0.0).dropna()
 
-cart = cart.dropna()
+    cartesian = pd.DataFrame({'cartesian': cart_nan}).round(1)
+    print(cartesian)
 
-cartesian = pd.DataFrame({'cartesian': cart})
-cartesian = cartesian.round(1)
-print(cartesian)
+    cartesian.to_json("data/Cartesian.json", orient="records")
 
-outputfile_carts = "data/Cartesian.json"
-carts = cartesian.to_json(outputfile_carts, orient="records")
+    var_ra = GAIA_RA.round(1)
+    dec = GAIA_DEC.round(1)
+    distance = RAW_D
 
-ra = gaia_ra
-ra = gaia_ra.round(1)
-dec = gaia_dec
-dec = gaia_dec.round(1)
-distance = d
-distance = distance.round(1)
-print(distance)
-pmra = gaiadatasets.pmra
-pmdec = gaiadatasets.pmdec
-Gaia_radial_velocity = gaiadatasets.radial_velocity
-radial_velocity = Gaia_radial_velocity.dropna()
-star_position = (ra, dec, distance)
+    distance = distance.round(1)
+    print(distance)
 
+    # star_position = (ra, dec, distance)
 
+    ster_pos_x = np.cos(var_ra) * np.sin(dec)
+    ster_pos_y = np.cos(dec)
+    ster_pos_z = np.sin(var_ra) * np.sin(dec)
 
-ster_positx = np.cos(ra) * np.sin(dec)
-ster_posity = np.cos(dec)
-ster_positz = np.sin(ra) * np.sin(dec)
+    ster_pos_x = ster_pos_x.round(2)
+    print(ster_pos_x)
 
+    ster_pos_y = ster_pos_y.round(2)
+    print(ster_pos_y)
 
-ster_positx = ster_positx.round(2)
-print(ster_positx)
+    ster_pos_z = ster_pos_z.round(2)
+    print(ster_pos_z)
 
-ster_posity = ster_posity.round(2)
-print(ster_posity)
+    sterpositie = pd.DataFrame({'designation': DESIGNATION, 'sterX': ster_pos_x,
+                                'sterY': ster_pos_y, 'sterZ': ster_pos_z})
+    print(sterpositie)
 
+    sterpositie.to_json("data/sterXYZ.json", orient="records")
 
-ster_positz = ster_positz.round(2)
-print(ster_positz)
+    ster_positie = (ster_pos_x * distance + ster_pos_y *
+                    distance + ster_pos_z * distance)
 
+    gaia_ster_a = ster_positie.round(1)
+    print(gaia_ster_a)
 
-sterpositie = pd.DataFrame({'designation' : designation,'sterX' : ster_positx, 'sterY' : ster_posity, 'sterZ' : ster_positz})
+    velocity_x = np.cos(GAIA_PMRA + var_ra) + np.sin(GAIA_PMDEC + dec)
+    velocity_y = np.cos(GAIA_PMDEC + dec)
+    velocity_z = np.sin(GAIA_PMRA + var_ra) * np.sin(GAIA_PMDEC + dec)
+    velocity = (velocity_x * (distance + GAIA_RADIAL_VELOCITY) + velocity_y *
+                (distance + GAIA_RADIAL_VELOCITY) + velocity_z * (distance + GAIA_RADIAL_VELOCITY))
 
-print(sterpositie)
+    gaia_ster_b = ster_positie + velocity
 
-outputfile_ster = "data/sterXYZ.json"
-sterpositie = sterpositie.to_json(outputfile_ster, orient="records")
+    velocity = (gaia_ster_b - gaia_ster_a)
 
+    # velocity_column = ['Velocity': velocity]
+    velocity = velocity.dropna()
+    velocity = pd.DataFrame({'velocity': velocity})
+    velocity = velocity.astype('double')
+    print(velocity)
+    # end xyz
+    # G = whitelight, GBp = blue, and GRp = red
 
-ster_positie = (ster_positx * distance + ster_posity * distance + ster_positz * distance)
-
-a = ster_positie
-a = ster_positie.round(1)
-print(a)
-
-velocity_x = np.cos(pmra + ra) + np.sin(pmdec + dec)
-velocity_y = np.cos(pmdec + dec)
-velocity_z = np.sin(pmra + ra) * np.sin(pmdec + dec)
-velocity = (velocity_x * (distance + radial_velocity) + velocity_y * (distance + radial_velocity) + velocity_z * (distance + radial_velocity))
-
-b = ster_positie + velocity
-
-velocity = (b - a)
-
-# velocity_column = ['Velocity' velocity]
-velocity = velocity.dropna()
-velocity = pd.DataFrame({'velocity': velocity})
-velocity = velocity.astype('double')
-print(velocity)
-
-# G = whitelight, GBp = blue, and GRp = red
+brightness()
+convert_xyz()
