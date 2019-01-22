@@ -2,7 +2,7 @@
 """
 @author: Mourad Nasser
 """
-#import cartesian as cartesian
+# import cartesian as cartesian
 import math
 import pandas as pd
 import numpy as np
@@ -24,7 +24,7 @@ GAIA_PMDEC = GAIADATASETS.pmdec
 GAIA_RADIAL_VELOCITY = GAIADATASETS.radial_velocity
 
 # Calculate distance cheap - No more use of tan for better performance
-DISTANCE = (1.0 / GAIA_PAR * 1000.0)
+DISTANCE = abs(1.0 / GAIA_PAR * 1000.0)
 
 # Star uuid converted to unsigned int64
 STAR_IDS = [np.uint64(id.split()[-1]) for id in DESIGNATION]
@@ -35,7 +35,7 @@ def brightness():
 
     # Absolute Magnitude
     absolute_magnitude = np.float(GAIA_PHOT_G_MEAN_MAG - 5 *
-                                  np.log10((abs(DISTANCE) / (3.08567758149137 * 10 ** 16) / 10)))
+                                  np.log10(DISTANCE / (3.08567758149137 * 10 ** 16) / 10))
 
     # Star uuid converted to unsigned int64
     abs_data = pd.DataFrame(
