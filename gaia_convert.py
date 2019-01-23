@@ -2,61 +2,41 @@
 """
 @author: Mourad Nasser
 """
-# import cartesian as cartesian
-import math
-import pandas as pd
-import numpy as np
 
-# Deze variabel importeert de CSV bestand van Gaia
-GAIADATASETS = pd.read_csv("data/data.csv")
-GAIADATASETS = GAIADATASETS.dropna()
+from pandas import read_csv, DataFrame
+from numpy import uint64, float64, log10, sin, cos
 
-# print(gaiadatasets[2:])
-''' Hier worden de columns van de datasets uitgeplukt '''
-GAIA_RA = GAIADATASETS.ra
-GAIA_DEC = GAIADATASETS.dec
-GAIA_PAR = GAIADATASETS.parallax
-GAIA_PHOT_G_MEAN_MAG = GAIADATASETS.phot_g_mean_mag
-GAIA_COLOUR = GAIADATASETS.astrometric_pseudo_colour
-DESIGNATION = GAIADATASETS.designation
-GAIA_PMRA = GAIADATASETS.pmra
-GAIA_PMDEC = GAIADATASETS.pmdec
-GAIA_RADIAL_VELOCITY = GAIADATASETS.radial_velocity
+# Read csv and drop rows with missing data
+gaia_data = read_csv("data/data.csv").dropna()
 
 # Calculate distance cheap - No more use of tan for better performance
-DISTANCE = abs(1.0 / GAIA_PAR * 1000.0)
+distance = abs(1.0 / gaia_data.parallax * 1000.0)
 
 # Star uuid converted to unsigned int64
-STAR_IDS = [np.uint64(id.split()[-1]) for id in DESIGNATION]
+ids = [uint64(id.split()[-1]) for id in gaia_data.designation]
 
 
-def brightness():
-    """ Berekent helderheid ster """
+def calculate_brightness():
+    """ Calculate the absolute magnitude based on the GBand mean magnitude """
 
-    # Absolute Magnitude
-    absolute_magnitude = np.float(GAIA_PHOT_G_MEAN_MAG - 5 *
-                                  np.log10(DISTANCE / (3.08567758149137 * 10 ** 16) / 10))
+    # The abs magnitude is increased with distance
+    abs_magnitude = gaia_data.phot_g_mean_mag - 5.0 * log10(distance / 10.0)
 
     # Star uuid converted to unsigned int64
-    abs_data = pd.DataFrame(
-        {'designation': STAR_IDS, 'brightness': absolute_magnitude})
-
-    # en file wegschrijven naar JSON
+    abs_data = DataFrame({'designation': ids, 'brightness': abs_magnitude})
     abs_data.to_json("data/abs_magnitude.json", orient="records")
 
 
-def convert_xyz():
-    ''' Converts Gaia data to XYZ values '''
+def calculate_position():
+    """ Converts Equatorial coords to cartesian coords  """
 
     # star_position = (ra, dec, distance)
-    star_pos_x = np.float64(DISTANCE * np.cos(GAIA_RA) * np.sin(GAIA_DEC))
-    star_pos_y = np.float64(DISTANCE * np.cos(GAIA_DEC))
-    star_pos_z = np.float64(DISTANCE * np.sin(GAIA_RA) * np.sin(GAIA_DEC))
+    x = float64(distance * cos(gaia_data.ra) * sin(gaia_data.dec))
+    y = float64(distance * cos(gaia_data.dec))
+    z = float64(distance * sin(gaia_data.ra) * sin(gaia_data.dec))
 
-    star_pos = pd.DataFrame({'designation': STAR_IDS, 'x': star_pos_x,
-                             'y': star_pos_y, 'z': star_pos_z})
-
-    star_pos.to_json("data/starXYZ.json", orient="records")
+    position = DataFrame({'designation': ids, 'x': x, 'y': y, 'z': z})
+    position.to_json("data/starXYZ.json", orient="records")
 
 
 def calculate_velocity():
@@ -69,5 +49,5 @@ def calculate_colour():
     # G = whitelight, GBp = blue, and GRp = red
     pass
 
-brightness()
-convert_xyz()
+calculate_brightness()
+calculate_position()
