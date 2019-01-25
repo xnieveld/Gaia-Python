@@ -105,3 +105,4 @@ venv.bak/
 
 # data folder Gaia
 data/*.json
+data/*.csv
