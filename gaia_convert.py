@@ -23,7 +23,7 @@ if len(argv) <= 2:
 
 FILENAME = argv[1]
 FILENAME_OUT = argv[2]
-print("file open")
+print("Opening file…")
 
 # Read csv and drop rows with missing data
 GAIA_DATA = read_csv(FILENAME).dropna()
@@ -112,6 +112,7 @@ def calculate_colour(star_temperature):
     # restrict temperature to 1000 - 40000
     temperature_clamped = float(max(min(star_temperature, 40000), 1000))
 
+    # check individual colour intensity
     temperature_clamped /= 100
     if temperature_clamped <= 66:
         calc_colour_r = 255
@@ -134,6 +135,8 @@ def calculate_colour(star_temperature):
     # print("COLOUR_R: %s, COLOUR_G: %s, COLOUR_B: %s" % (COLOUR_R, COLOUR_G, COLOUR_B))
     # print("input: %s" % t)
     # print("COLOUR_R: %s, COLOUR_G: %s, COLOUR_B: %s" % (len(COLOUR_R), len(COLOUR_G), len(COLOUR_B)))
+
+    # append individual r/g/b colours to R/G/B array
     COLOUR_R.append(calc_colour_r)
     COLOUR_G.append(calc_colour_g)
     COLOUR_B.append(calc_colour_b)
@@ -162,7 +165,7 @@ def calculate_all():
     # print(position.groupby("STAR_DESIGNATION").count())
     print("Writing output JSON to file…")
     position.to_json(FILENAME_OUT, orient="records")
-    print("Done writing, making Unity JSON changes..")
+    print("Prepending and appending JSON to make to make it compatible with Unity…")
     # Unity likes a named JSON block
     with open(FILENAME_OUT, 'r') as original:
         data = original.read()
