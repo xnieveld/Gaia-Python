@@ -27,8 +27,7 @@ def parse_float(possible_float):
 def parse():
     ''' Runs the parsing script'''
     data = []
-    good_columns = ['designation', 'ra', 'dec', 'parallax', 'pmra',
-                    'pmdec', 'astrometric_pseudo_colour', 'phot_g_mean_mag']
+    good_columns = ['designation', 'ra', 'dec', 'parallax', 'phot_g_mean_mag']
     column_names = good_columns
     print("file open")
     with open(FILENAME, encoding="UTF-8") as json_file:

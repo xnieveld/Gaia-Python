@@ -11,11 +11,13 @@
 #     "b":  blue (rgb) value
 #   }
 # ]
+# pylint: disable=line-too-long
+# everyone has widescreen computers nowadays
 
 from sys import argv
-from pandas import read_csv, DataFrame
-from numpy import uint64, float64, log10, sin, cos
 import random
+from pandas import read_csv, DataFrame
+from numpy import uint64, float64, log, log10, sin, cos
 
 if len(argv) <= 2:
     print("Not enough argments given, expected <input.csv> <output.json>")
@@ -28,39 +30,38 @@ print("file open")
 # Read csv and drop rows with missing data
 GAIA_DATA = read_csv(FILENAME).dropna()
 
-print("calc dist")
+print("Calculating distance")
 # Calculate distance cheap - No more use of tan for better performance
-distance = abs(1.0 / GAIA_DATA.parallax * 1000.0)
+DISTANCE = abs(1.0 / GAIA_DATA.parallax * 1000.0)
 
 # Star uuid converted to unsigned int64
-ids = [uint64(id.split()[-1]) for id in GAIA_DATA.designation]
+STAR_DESIGNATION = [uint64(id.split()[-1]) for id in GAIA_DATA.designation]
+
 
 def calculate_brightness():
-    """ Calculate the absolute magnitude based on the GBand mean magnitude """
+    ''' Calculate the absolute magnitude based on the GBand mean magnitude '''
 
-    # The abs magnitude is increased with distance
-    ABS_MAGNITUDE = GAIA_DATA.phot_g_mean_mag - 5.0 * log10(distance / 10.0)
-
+    # The abs magnitude is increased with distance.
     # Star uuid converted to unsigned int64
-    abs_data = DataFrame({'designation': ids, 'brightness': ABS_MAGNITUDE})
+    abs_data = DataFrame({'designation': STAR_DESIGNATION, 'brightness': (GAIA_DATA.phot_g_mean_mag - 5.0 * log10(DISTANCE / 10.0))})
     abs_data.to_json("data/ABS_MAGNITUDE.json", orient="records")
+
+
 def calculate_position():
-    """ Converts Equatorial coords to cartesian coords  """
+    ''' Converts Equatorial coords to cartesian coords  '''
 
     # star_position = (ra, dec, distance)
-    x = float64(distance * cos(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
-    y = float64(distance * cos(GAIA_DATA.dec))
-    z = float64(distance * sin(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
+    star_x = float64(DISTANCE * cos(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
+    star_y = float64(DISTANCE * cos(GAIA_DATA.dec))
+    star_z = float64(DISTANCE * sin(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
 
-    position = DataFrame({'designation': ids, 'x': x, 'y': y, 'z': z})
+    position = DataFrame({'designation': STAR_DESIGNATION,
+                          'x': star_x, 'y': star_y, 'z': star_z})
     position.to_json(FILENAME_OUT, orient="records")
+
 def calculate_velocity():
-    """ Calculate velocity """
-    pass
-# def calculate_colour():
-#     """ Calculate colour from dataset """
-#     # G = whitelight, GBp = blue, and GRp = red
-#     pass
+    ''' Calculate velocity '''
+    print("//TODO: not built yet")
 
 def calculate_temp(absolute_mag):
     ''' Estimates temperature from absolute magnitude '''
@@ -92,87 +93,75 @@ def calculate_temp(absolute_mag):
             temp = random.uniform(6000, 12000)
     return temp
 
-COLOR_R = []
-COLOR_G = []
-COLOR_B = []
+COLOUR_R = []
+COLOUR_G = []
+COLOUR_B = []
 
-def calculate_color(t):
-    ''' Calculate an RGB colour from a given temperature '''
-    ''' t = Temperature in Kelvin between 1000 and 40000 '''
-    ''' returns: RGB Aproximate equivalent '''
-    from numpy import log
-    # color = [0, 0, 0]
+def calculate_colour(star_temperature):
+    ''' Calculate an RGB colour from a given temperature
+        t = Temperature in Kelvin between 1000 and 40000
+        returns: RGB Aproximate equivalent
+        Currently estimated, Gaia has actual color data '''
 
-    mCOLOR_R  = 0.0
-    mCOLOR_G  = 0.0
-    mCOLOR_B  = 0.0
-    
-    temperature_clamped = float(max(min(t, 40000), 1000))
-    # max(min(my_value, max_value), min_value)
+    calc_colour_r = 0.0
+    calc_colour_g = 0.0
+    calc_colour_b = 0.0
+
+    # restrict temperature to 1000 - 40000
+    temperature_clamped = float(max(min(star_temperature, 40000), 1000))
 
     temperature_clamped /= 100
     if temperature_clamped <= 66:
-        mCOLOR_R = 255
-        mCOLOR_G = float(max(min(float(99.4709025861) * log(temperature_clamped) - float(161.1195681661), 255), 0))
+        calc_colour_r = 255
+        calc_colour_g = float(max(min(float(99.4709025861) * log(temperature_clamped) - float(161.1195681661), 255), 0))
         if temperature_clamped > 19:
-            mCOLOR_B = float(max(min(float(138.5177312231) * log(temperature_clamped - 10) - float(305.0447927307), 255), 0))
+            calc_colour_b = float(max(min(float(138.5177312231) * log(temperature_clamped - 10) - float(305.0447927307), 255), 0))
     else:
-        mCOLOR_R = float(max(min(float(329.698727446) * (temperature_clamped - 60) ** float(-0.1332047592), 255), 0))
-        mCOLOR_G = float(max(min(float(288.1221695283) * (temperature_clamped - 60) ** float(-0.0755148492), 255), 0))
-        mCOLOR_B = 255
+        calc_colour_r = float(max(min(float(329.698727446) * (temperature_clamped - 60) ** float(-0.1332047592), 255), 0))
+        calc_colour_g = float(max(min(float(288.1221695283) * (temperature_clamped - 60) ** float(-0.0755148492), 255), 0))
+        calc_colour_b = 255
 
-    mCOLOR_R /= 255
-    mCOLOR_G /= 255
-    mCOLOR_B /= 255
-    # print("COLOR_R: %s, COLOR_G: %s, COLOR_B: %s" % (COLOR_R, COLOR_G, COLOR_B))
+    # divide by 255 for rgb
+    calc_colour_r /= 255
+    calc_colour_g /= 255
+    calc_colour_b /= 255
+    # print("COLOUR_R: %s, COLOUR_G: %s, COLOUR_B: %s" % (COLOUR_R, COLOUR_G, COLOUR_B))
     # print("input: %s" % t)
-    # print("COLOR_R: %s, COLOR_G: %s, COLOR_B: %s" % (len(COLOR_R), len(COLOR_G), len(COLOR_B)))
-    COLOR_R.append(mCOLOR_R)
-    COLOR_G.append(mCOLOR_G)
-    COLOR_B.append(mCOLOR_B)
-    # return color
+    # print("COLOUR_R: %s, COLOUR_G: %s, COLOUR_B: %s" % (len(COLOUR_R), len(COLOUR_G), len(COLOUR_B)))
+    COLOUR_R.append(calc_colour_r)
+    COLOUR_G.append(calc_colour_g)
+    COLOUR_B.append(calc_colour_b)
+    # return colour
 
-ABS_MAGNITUDE = GAIA_DATA.phot_g_mean_mag - 5.0 * log10(distance / 10.0)
-absmag_bright = [calculate_temp(bright) for bright in ABS_MAGNITUDE]
-print("printcolor")
-# for color in absmag_bright[:10]:     calculate_color(color)
-# colors = [calculate_color(color) for color in absmag_bright]
-# [calculate_color(x) for x in absmag_bright[:10]]
-print("start calculate color")
-[calculate_color(x) for x in absmag_bright]
-print("end calculate color")
+ABS_MAGNITUDE = GAIA_DATA.phot_g_mean_mag - 5.0 * log10(DISTANCE / 10.0)
+ABSMAG_BRIGHT = [calculate_temp(bright) for bright in ABS_MAGNITUDE]
+# [calculate_colour(x) for x in absmag_bright[:10]]
+print("Calculating colour...")
+for x in ABSMAG_BRIGHT:
+    calculate_colour(x)
+
 
 def calculate_all():
+    ''' Run all scripts, including the previous position and brightness '''
 
-    print("calc absmag start")
-    print("calc absmag end")
-    print("calc xyz start")
-    x = float64(distance * cos(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
-    y = float64(distance * cos(GAIA_DATA.dec))
-    z = float64(distance * sin(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
-    print("calc xyz end")
-    print("final dataframe start")
-    # print(ABS_MAGNITUDE)
-    # print(absmag_bright)
-    # print(colors)
-    # print("colors1")
-    # print(colors[0])
-    # print((estimate_temperature(ABS_MAGNITUDE)[0]))
-    # 'temperature': absmag_bright
-    # print(posi.count(level="Person"))
-    # print(COLOR_R)
-    position = DataFrame({'d': ids, 'x': x, 'y': y, 'z': z,
-                      'm': ABS_MAGNITUDE, 'r': COLOR_R, 'g': COLOR_G, 'b': COLOR_B})
-    # position2 = DataFrame('count': position.count(level="ids")
-    # print(position.groupby("d").count())
-    print("final dataframe end")
-    print("final json start")
+    print("Calculating XYZ...")
+    star_x = float64(DISTANCE * cos(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
+    star_y = float64(DISTANCE * cos(GAIA_DATA.dec))
+    star_z = float64(DISTANCE * sin(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
+
+    print("Outputting to DataFrame...")
+    position = DataFrame({'d': STAR_DESIGNATION, 'x': star_x, 'y': star_y, 'z': star_z, 'm': ABS_MAGNITUDE, 'r': COLOUR_R, 'g': COLOUR_G, 'b': COLOUR_B})
+    # position2 = DataFrame('count': position.count(level="STAR_DESIGNATION")
+    # print(position.groupby("STAR_DESIGNATION").count())
+    print("Writing output JSON to file...")
     position.to_json(FILENAME_OUT, orient="records")
-    print("final dataframe end")
-    print("data tag start")
-    with open(FILENAME_OUT, 'r') as original: data = original.read()
-    with open(FILENAME_OUT, 'w') as modified: modified.write('{"data":' + data + '}')
-    print("data tag end")
+    print("Done writing, making Unity JSON changes..")
+    # Unity likes a named JSON block
+    with open(FILENAME_OUT, 'r') as original:
+        data = original.read()
+    with open(FILENAME_OUT, 'w') as modified:
+        modified.write('{"data":' + data + '}')
+    print("Done.")
 
 # calculate_brightness()
 # calculate_position()
