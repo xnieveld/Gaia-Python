@@ -1,4 +1,4 @@
-pandas>=0.23.4
+pandas>=0.24.0
 ijson>=2.3
-numpy>=1.15.2
+numpy>=1.16.0
 matplotlib>=3.0.2
