@@ -11,8 +11,6 @@
 #     "b":  blue (rgb) value
 #   }
 # ]
-# pylint: disable=line-too-long
-# everyone has widescreen computers nowadays
 
 from sys import argv
 import random
@@ -30,7 +28,7 @@ print("file open")
 # Read csv and drop rows with missing data
 GAIA_DATA = read_csv(FILENAME).dropna()
 
-print("Calculating distance")
+print("Calculating distance…")
 # Calculate distance cheap - No more use of tan for better performance
 DISTANCE = abs(1.0 / GAIA_DATA.parallax * 1000.0)
 
@@ -43,7 +41,8 @@ def calculate_brightness():
 
     # The abs magnitude is increased with distance.
     # Star uuid converted to unsigned int64
-    abs_data = DataFrame({'designation': STAR_DESIGNATION, 'brightness': (GAIA_DATA.phot_g_mean_mag - 5.0 * log10(DISTANCE / 10.0))})
+    abs_data = DataFrame({'designation': STAR_DESIGNATION, 'brightness': (
+        GAIA_DATA.phot_g_mean_mag - 5.0 * log10(DISTANCE / 10.0))})
     abs_data.to_json("data/ABS_MAGNITUDE.json", orient="records")
 
 
@@ -59,9 +58,11 @@ def calculate_position():
                           'x': star_x, 'y': star_y, 'z': star_z})
     position.to_json(FILENAME_OUT, orient="records")
 
+
 def calculate_velocity():
     ''' Calculate velocity '''
     print("//TODO: not built yet")
+
 
 def calculate_temp(absolute_mag):
     ''' Estimates temperature from absolute magnitude '''
@@ -97,6 +98,7 @@ COLOUR_R = []
 COLOUR_G = []
 COLOUR_B = []
 
+
 def calculate_colour(star_temperature):
     ''' Calculate an RGB colour from a given temperature
         t = Temperature in Kelvin between 1000 and 40000
@@ -113,12 +115,16 @@ def calculate_colour(star_temperature):
     temperature_clamped /= 100
     if temperature_clamped <= 66:
         calc_colour_r = 255
-        calc_colour_g = float(max(min(float(99.4709025861) * log(temperature_clamped) - float(161.1195681661), 255), 0))
+        calc_colour_g = float(max(min(float(
+            99.4709025861) * log(temperature_clamped) - float(161.1195681661), 255), 0))
         if temperature_clamped > 19:
-            calc_colour_b = float(max(min(float(138.5177312231) * log(temperature_clamped - 10) - float(305.0447927307), 255), 0))
+            calc_colour_b = float(max(min(float(
+                138.5177312231) * log(temperature_clamped - 10) - float(305.0447927307), 255), 0))
     else:
-        calc_colour_r = float(max(min(float(329.698727446) * (temperature_clamped - 60) ** float(-0.1332047592), 255), 0))
-        calc_colour_g = float(max(min(float(288.1221695283) * (temperature_clamped - 60) ** float(-0.0755148492), 255), 0))
+        calc_colour_r = float(max(min(float(
+            329.698727446) * (temperature_clamped - 60) ** float(-0.1332047592), 255), 0))
+        calc_colour_g = float(max(min(float(
+            288.1221695283) * (temperature_clamped - 60) ** float(-0.0755148492), 255), 0))
         calc_colour_b = 255
 
     # divide by 255 for rgb
@@ -136,7 +142,7 @@ def calculate_colour(star_temperature):
 ABS_MAGNITUDE = GAIA_DATA.phot_g_mean_mag - 5.0 * log10(DISTANCE / 10.0)
 ABSMAG_BRIGHT = [calculate_temp(bright) for bright in ABS_MAGNITUDE]
 # [calculate_colour(x) for x in absmag_bright[:10]]
-print("Calculating colour...")
+print("Calculating colour…")
 for x in ABSMAG_BRIGHT:
     calculate_colour(x)
 
@@ -144,16 +150,17 @@ for x in ABSMAG_BRIGHT:
 def calculate_all():
     ''' Run all scripts, including the previous position and brightness '''
 
-    print("Calculating XYZ...")
+    print("Calculating XYZ…")
     star_x = float64(DISTANCE * cos(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
     star_y = float64(DISTANCE * cos(GAIA_DATA.dec))
     star_z = float64(DISTANCE * sin(GAIA_DATA.ra) * sin(GAIA_DATA.dec))
 
-    print("Outputting to DataFrame...")
-    position = DataFrame({'d': STAR_DESIGNATION, 'x': star_x, 'y': star_y, 'z': star_z, 'm': ABS_MAGNITUDE, 'r': COLOUR_R, 'g': COLOUR_G, 'b': COLOUR_B})
+    print("Outputting to DataFrame…")
+    position = DataFrame({'d': STAR_DESIGNATION, 'x': star_x, 'y': star_y, 'z': star_z,
+                          'm': ABS_MAGNITUDE, 'r': COLOUR_R, 'g': COLOUR_G, 'b': COLOUR_B})
     # position2 = DataFrame('count': position.count(level="STAR_DESIGNATION")
     # print(position.groupby("STAR_DESIGNATION").count())
-    print("Writing output JSON to file...")
+    print("Writing output JSON to file…")
     position.to_json(FILENAME_OUT, orient="records")
     print("Done writing, making Unity JSON changes..")
     # Unity likes a named JSON block
